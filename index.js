@@ -8,7 +8,7 @@ const generateID = () => {
   while (true) {
     id = Math.floor(Math.random() * maxID)
     if (!ids.includes(id)) {
-      return id
+      return "" + id
     }
   }
 }
@@ -37,6 +37,7 @@ persons = [
 ]
 
 const app = express()
+app.use(express.static("dist"))
 app.use(express.json())
 app.use(morgan("tiny"))
 app.use(morgan((token, req, res) => {
