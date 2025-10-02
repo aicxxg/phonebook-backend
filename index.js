@@ -1,40 +1,7 @@
+require('dotenv').config()
 const express = require("express")
 const morgan = require("morgan")
-
-const generateID = () => {
-  const ids = persons.map(p => p.id)
-  let id
-  let maxID = Math.pow(2, 64)
-  while (true) {
-    id = Math.floor(Math.random() * maxID)
-    if (!ids.includes(id)) {
-      return "" + id
-    }
-  }
-}
-
-persons = [
-    { 
-      "id": "1",
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": "2",
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": "3",
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": "4",
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
+const Person = require("./models/person")
 
 const app = express()
 app.use(express.static("dist"))
@@ -46,11 +13,16 @@ app.use(morgan((token, req, res) => {
   return null
 }))
 
-app.get("/api/persons", (request, response) => {
-  response.json(persons)
+app.get("/api/persons", (request, response, next) => {
+  Person.find({})
+    .then(persons => {
+      response.json(persons)
+    }).catch((error) => {
+      next(error)
+    })
 })
 
-app.post("/api/persons", (request, response) => {
+app.post("/api/persons", (request, response, next) => {
   const data = request.body
   if (!data) {
     return response.status(400).json(
@@ -67,45 +39,78 @@ app.post("/api/persons", (request, response) => {
       { error: "you must specify number" }
     )
   }
-  if (persons.map(p => p.name).includes(data.name)) {
-    return response.status(400).json({ error: "name must be unique" })
-  }
-  const person = {
-    id: generateID(),
+  const person = new Person({
     name: data.name,
     number: data.number
-  }
-  persons = persons.concat(person)
-  response.json(person)
+  })
+  person.save().then(r => {
+    response.json(r)
+  }).catch((error) => {
+    next(error)
+  })
 })
 
-app.get("/api/persons/:id", (request, response) => {
+app.put("/api/persons/:id",(request, response, next) => {
   const id = request.params.id
-  const person = persons.find(p => p.id === id)
-  if (!person) {
-    response.status(404).end()
-  } else {
-    response.json(person)
-  }
+  const data = request.body
+  const person = {}
+  if (data.name) person.name = data.name
+  if (data.number) person.number = data.number
+  Person.findByIdAndUpdate(id, person, {new: true, runValidators: true})
+  .then(r => {
+    if (r) {
+      response.json(r)
+    } else {
+      response.status(404).end()
+    }
+  }).catch(error => {
+    next(error)
+  })
 })
 
-app.delete("/api/persons/:id", (request, response) => {
+app.get("/api/persons/:id", (request, response, next) => {
   const id = request.params.id
-  const person = persons.find(p => p.id === id)
-  if (person) {
-    persons = persons.filter((p) => p !== person)
-    response.status(204).end()
-  } else {
-    response.status(404).end()
-  }
+  Person.findById(id)
+    .then(person => {
+      if (person)
+        response.json(person)
+      else {
+        response.status(404).end()
+      }
+    }).catch((error) => {
+      next(error)
+    })
+})
+
+app.delete("/api/persons/:id", (request, response, next) => {
+  const id = request.params.id
+  Person.findByIdAndDelete(id)
+    .then(r => {
+      if (r) response.status(204).end()
+      else response.status(404).end()
+    }).catch((error) => {
+      next(error)
+    })
 })
 
 app.get("/info", (request, response) => {
-  //Person.find({}).then(persons =>
+  Person.find({}).then(persons =>
   response.send(`
     <p>Phonebook has info for ${persons.length} people</p>
     <p>${new Date()}</p>
-  `)
+  `))
+})
+
+app.use((error, request, response, next) => {
+  console.log("error:")
+  console.log(error.message)
+  if (error.name === "CastError") {
+    return response.status(400).json({error: "malformatted error"})
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message})
+  }
+  console.log(error)
+  next(error)
 })
 
 const port = process.env.PORT || 3001
