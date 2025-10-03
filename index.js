@@ -1,7 +1,7 @@
 require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
-const Person = require('./models/person')
+const [Person, mongodbConnection] = require('./models/person')
 
 const app = express()
 app.use(express.static('dist'))
@@ -99,6 +99,14 @@ app.get('/info', (request, response) => {
     <p>Phonebook has info for ${persons.length} people</p>
     <p>${new Date()}</p>
   `))
+})
+
+app.get('/debug-state', (request, response) => {
+  mongodbConnection.then(() => {
+    response.send('<p>success</p>')
+  }).catch((error) => {
+    response.json(error)
+  })
 })
 
 app.use((error, request, response, next) => {

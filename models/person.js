@@ -6,8 +6,13 @@ const getMongodbURI = (path) => {
   return uri.replace('<PASSWORD>', password).replace('<PATH>', path)
 }
 
+let debugState = {
+  initialized: false,
+  error: false
+}
 mongoose.set('strictQuery', false)
-mongoose.connect(getMongodbURI('phonebook'))
+const mongodbConnection = mongoose.connect(getMongodbURI('phonebook'))
+mongodbConnection.then(() => 0).catch(() => 0)
 const personSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -34,4 +39,4 @@ personSchema.set('toJSON', {
 })
 const Person = mongoose.model('Person', personSchema)
 
-module.exports = Person
+module.exports = [Person, mongodbConnection]
