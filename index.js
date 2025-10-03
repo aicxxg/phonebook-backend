@@ -1,19 +1,19 @@
 require('dotenv').config()
-const express = require("express")
-const morgan = require("morgan")
-const Person = require("./models/person")
+const express = require('express')
+const morgan = require('morgan')
+const Person = require('./models/person')
 
 const app = express()
-app.use(express.static("dist"))
+app.use(express.static('dist'))
 app.use(express.json())
-app.use(morgan("tiny"))
+app.use(morgan('tiny'))
 app.use(morgan((token, req, res) => {
-  if (req.method === "POST" && req.body)
+  if (req.method === 'POST' && req.body)
     return JSON.stringify(req.body, null, 2)
   return null
 }))
 
-app.get("/api/persons", (request, response, next) => {
+app.get('/api/persons', (request, response, next) => {
   Person.find({})
     .then(persons => {
       response.json(persons)
@@ -22,21 +22,21 @@ app.get("/api/persons", (request, response, next) => {
     })
 })
 
-app.post("/api/persons", (request, response, next) => {
+app.post('/api/persons', (request, response, next) => {
   const data = request.body
   if (!data) {
     return response.status(400).json(
-      { error: "empty content"}
+      { error: 'empty content' }
     )
   }
   if (!data.name) {
     return response.status(400).json(
-      { error: "you must specify name" }
+      { error: 'you must specify name' }
     )
   }
   if (!data.number) {
     return response.status(400).json(
-      { error: "you must specify number" }
+      { error: 'you must specify number' }
     )
   }
   const person = new Person({
@@ -50,25 +50,25 @@ app.post("/api/persons", (request, response, next) => {
   })
 })
 
-app.put("/api/persons/:id",(request, response, next) => {
+app.put('/api/persons/:id',(request, response, next) => {
   const id = request.params.id
   const data = request.body
   const person = {}
   if (data.name) person.name = data.name
   if (data.number) person.number = data.number
-  Person.findByIdAndUpdate(id, person, {new: true, runValidators: true})
-  .then(r => {
-    if (r) {
-      response.json(r)
-    } else {
-      response.status(404).end()
-    }
-  }).catch(error => {
-    next(error)
-  })
+  Person.findByIdAndUpdate(id, person, { new: true, runValidators: true })
+    .then(r => {
+      if (r) {
+        response.json(r)
+      } else {
+        response.status(404).end()
+      }
+    }).catch(error => {
+      next(error)
+    })
 })
 
-app.get("/api/persons/:id", (request, response, next) => {
+app.get('/api/persons/:id', (request, response, next) => {
   const id = request.params.id
   Person.findById(id)
     .then(person => {
@@ -82,7 +82,7 @@ app.get("/api/persons/:id", (request, response, next) => {
     })
 })
 
-app.delete("/api/persons/:id", (request, response, next) => {
+app.delete('/api/persons/:id', (request, response, next) => {
   const id = request.params.id
   Person.findByIdAndDelete(id)
     .then(r => {
@@ -93,21 +93,21 @@ app.delete("/api/persons/:id", (request, response, next) => {
     })
 })
 
-app.get("/info", (request, response) => {
+app.get('/info', (request, response) => {
   Person.find({}).then(persons =>
-  response.send(`
+    response.send(`
     <p>Phonebook has info for ${persons.length} people</p>
     <p>${new Date()}</p>
   `))
 })
 
 app.use((error, request, response, next) => {
-  console.log("error:")
+  console.log('error:')
   console.log(error.message)
-  if (error.name === "CastError") {
-    return response.status(400).json({error: "malformatted error"})
+  if (error.name === 'CastError') {
+    return response.status(400).json({ error: 'malformatted error' })
   } else if (error.name === 'ValidationError') {
-    return response.status(400).json({ error: error.message})
+    return response.status(400).json({ error: error.message })
   }
   console.log(error)
   next(error)

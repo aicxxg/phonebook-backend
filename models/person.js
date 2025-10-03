@@ -1,12 +1,12 @@
-const mongoose = require("mongoose")
+const mongoose = require('mongoose')
 
 const getMongodbURI = (path) => {
   const uri = process.env.MONGODB_URI || ''
   const password = process.env.MONGODB_PASSWORD || ''
-  return uri.replace("<PASSWORD>", password).replace('<PATH>', path)
+  return uri.replace('<PASSWORD>', password).replace('<PATH>', path)
 }
 
-mongoose.set("strictQuery", false)
+mongoose.set('strictQuery', false)
 mongoose.connect(getMongodbURI('phonebook'))
 const personSchema = new mongoose.Schema({
   name: {
@@ -32,6 +32,6 @@ personSchema.set('toJSON', {
     delete returnedObject.__v
   }
 })
-const Person = mongoose.model("Person", personSchema)
+const Person = mongoose.model('Person', personSchema)
 
 module.exports = Person
